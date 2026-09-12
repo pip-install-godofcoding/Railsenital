@@ -1,69 +1,83 @@
 import { useState } from 'react';
 import { useWebSockets } from './hooks/useWebSockets';
-import Dashboard from './components/Dashboard';
-import StationMasterVDU from './components/StationMasterVDU';
-import ImSafe from './components/ImSafe';
+import ControlRoom from './pages/ControlRoom';
+import PassengerApp from './pages/PassengerApp';
+import StationMasterVDU from './pages/StationMasterVDU';
 
-type View = 'dashboard' | 'vdu' | 'imsafe';
+export type Page = 'control' | 'passenger' | 'stationmaster';
 
-function App() {
+export default function App() {
+  const [page, setPage] = useState<Page>('control');
   const { state, connected } = useWebSockets();
-  const [view, setView] = useState<View>('dashboard');
-
-  const hasIncident = state.incident_alerts.length > 0;
-
-  const navBtn = (label: string, target: View, danger?: boolean) => (
-    <button
-      onClick={() => setView(target)}
-      className={`px-4 py-2 rounded font-bold text-sm transition-colors ${
-        view === target
-          ? danger
-            ? 'bg-red-600 text-white'
-            : 'bg-blue-600 text-white'
-          : danger
-          ? 'bg-red-900/40 text-red-300 border border-red-800 hover:bg-red-800'
-          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-      }`}
-    >
-      {label}
-    </button>
-  );
 
   return (
-    <div className="min-h-screen bg-railDark text-white">
-      <nav className="bg-gray-900 border-b border-gray-800 p-3 flex justify-between items-center sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-          <span className="font-mono text-xs text-gray-400">
-            {connected ? 'LIVE' : 'DISCONNECTED'}
-          </span>
-          <span className="text-gray-600 text-xs hidden sm:inline">RAIL SENTINEL</span>
-        </div>
+    <div className="min-h-screen bg-rail-bg flex flex-col pb-14 md:pb-0 md:pt-12">
+      {/* Top / Bottom nav bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-rail-panel/95 backdrop-blur border-t border-rail-border
+                      flex items-center justify-center gap-1 px-4 py-2
+                      md:top-0 md:bottom-auto md:border-t-0 md:border-b">
+        <div className="flex items-center gap-2 max-w-5xl w-full">
+          {/* Brand */}
+          <div className="hidden md:flex items-center gap-2 mr-6 shrink-0">
+            <div className="w-7 h-7 rounded bg-rail-accent/10 border border-rail-accent/30 flex items-center justify-center">
+              <svg className="w-4 h-4 text-rail-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-xs font-bold text-rail-text tracking-wider">RailSentinel</div>
+              <div className="text-[9px] font-mono text-rail-textMuted uppercase tracking-widest">Safety Command</div>
+            </div>
+          </div>
 
-        <div className="flex gap-2 items-center">
-          {navBtn('Main Dashboard', 'dashboard')}
-          {navBtn('Station VDU', 'vdu')}
-          <button
-            onClick={() => setView('imsafe')}
-            className={`px-4 py-2 rounded font-bold text-sm transition-colors relative ${
-              view === 'imsafe'
-                ? 'bg-green-600 text-white'
-                : 'bg-green-900/40 text-green-300 border border-green-800 hover:bg-green-800'
-            }`}
-          >
-            {hasIncident && view !== 'imsafe' && (
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-            )}
-            I'm Safe
-          </button>
+          {/* Page tabs */}
+          <div className="flex gap-1 flex-1">
+            <NavBtn icon="🛡️" label="Control Room"    sub="Operator Dashboard" active={page==='control'}       onClick={() => setPage('control')} />
+            <NavBtn icon="🚆" label="Passenger"        sub="Track & Safety"    active={page==='passenger'}     onClick={() => setPage('passenger')} />
+            <NavBtn icon="📡" label="Station Master"   sub="VDU Console"       active={page==='stationmaster'} onClick={() => setPage('stationmaster')} />
+          </div>
+
+          {/* Connection status */}
+          <div className={`hidden md:flex items-center gap-1.5 text-xs font-mono ml-4 shrink-0 ${connected ? 'text-rail-success' : 'text-rail-danger'}`}>
+            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-rail-success animate-pulse' : 'bg-rail-danger animate-ping'}`} />
+            {connected ? 'LIVE' : 'OFFLINE'}
+          </div>
+
+          {/* Incident banner dot */}
+          {state.incident_alerts.length > 0 && (
+            <span className="hidden md:flex items-center gap-1 text-[10px] font-mono font-bold text-rail-danger bg-rail-danger/10 border border-rail-danger/30 px-2 py-0.5 rounded animate-pulse ml-2">
+              🚨 {state.incident_alerts.length} INCIDENT{state.incident_alerts.length > 1 ? 'S' : ''}
+            </span>
+          )}
         </div>
       </nav>
 
-      {view === 'dashboard' && <Dashboard state={state} />}
-      {view === 'vdu' && <StationMasterVDU state={state} />}
-      {view === 'imsafe' && <ImSafe state={state} />}
+      {/* Page content */}
+      <div className="flex-1 overflow-hidden">
+        {page === 'control'       && <ControlRoom state={state} connected={connected} />}
+        {page === 'passenger'     && <PassengerApp state={state} connected={connected} />}
+        {page === 'stationmaster' && <StationMasterVDU state={state} connected={connected} />}
+      </div>
     </div>
   );
 }
 
-export default App;
+function NavBtn({ icon, label, sub, active, onClick }: {
+  icon: string; label: string; sub: string; active: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex-1 md:flex-none justify-center border
+        ${active
+          ? 'bg-rail-accent/15 text-rail-accent border-rail-accent/30 shadow-accent'
+          : 'text-rail-textMuted hover:text-rail-text hover:bg-rail-panelHover border-transparent'}`}
+    >
+      <span className="text-base">{icon}</span>
+      <div className="hidden sm:block text-left">
+        <div className="text-xs font-bold leading-none">{label}</div>
+        <div className="text-[9px] opacity-60 leading-none mt-0.5">{sub}</div>
+      </div>
+    </button>
+  );
+}

@@ -2,9 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #121212;
-  color: white;
-  font-family: 'Inter', sans-serif;
-  margin: 0;
+@layer base {
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: #040b14;
+    color: #e2f1ff;
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #040b14; }
+  ::-webkit-scrollbar-thumb { background: #1a3655; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #254b75; }
+}
+
+@layer components {
+  .rail-card {
+    @apply bg-rail-panel border border-rail-border rounded-xl p-4 shadow-panel;
+  }
+  .rail-btn {
+    @apply px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-150 cursor-pointer border;
+  }
+  .rail-btn-accent {
+    @apply rail-btn bg-rail-accent/10 border-rail-accent/40 text-rail-accent hover:bg-rail-accent/20;
+  }
+  .rail-btn-danger {
+    @apply rail-btn bg-rail-danger/10 border-rail-danger/40 text-rail-danger hover:bg-rail-danger/20;
+  }
+  .rail-btn-ghost {
+    @apply rail-btn bg-transparent border-rail-border text-rail-textMuted hover:border-rail-borderHover hover:text-rail-text;
+  }
+  .rail-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono font-semibold;
+  }
+  .rail-input {
+    @apply w-full bg-rail-bg border border-rail-border rounded-lg px-3 py-2 text-rail-text text-sm
+           placeholder-rail-textMuted focus:outline-none focus:border-rail-accent transition-colors;
+  }
+  .status-dot-green  { @apply w-2 h-2 rounded-full bg-rail-success animate-pulse; }
+  .status-dot-red    { @apply w-2 h-2 rounded-full bg-rail-danger animate-ping; }
+  .status-dot-yellow { @apply w-2 h-2 rounded-full bg-rail-warning animate-pulse; }
+}
+
+/* Leaflet overrides */
+.leaflet-container { background: #040b14 !important; }
+.leaflet-popup-content-wrapper {
+  background: #091524 !important;
+  border: 1px solid #1a3655 !important;
+  color: #e2f1ff !important;
+  border-radius: 10px !important;
+}
+.leaflet-popup-tip { background: #091524 !important; }
+.leaflet-control-zoom a {
+  background: #091524 !important;
+  color: #8da9c4 !important;
+  border-color: #1a3655 !important;
 }
