@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface Alert {
   id: string;
@@ -11,6 +11,7 @@ export interface Alert {
   acknowledged_at?: number;
   escalated_at?: number;
   escalated_to?: string;
+  affected_id?: string;
 }
 
 export interface TrainData {
@@ -21,6 +22,7 @@ export interface TrainData {
   delayMinutes: number;
   currentStation: string;
   avgSpeed: number;
+  segmentSpeed?: number;
   source: string;
   destination: string;
   distanceFromOriginKm: number;
@@ -29,6 +31,18 @@ export interface TrainData {
   nextHalt: string;
   lat?: number;
   lng?: number;
+  stationETAs?: StationETA[];
+}
+
+export interface StationETA {
+  station_name: string;
+  station_code: string;
+  dist_km: number;
+  dist_remaining_km: number;
+  predicted_delay_min: number;
+  eta_timestamp: number;
+  scheduled_arrival: string;
+  expected_arrival: string;
 }
 
 export interface ETAPrediction {
@@ -36,6 +50,7 @@ export interface ETAPrediction {
   confidence_low_min: number;
   confidence_high_min: number;
   confidence_pct: number;
+  baseline_mae_min?: number;
 }
 
 export interface CoachPosition {
@@ -58,6 +73,47 @@ export interface RiskScore {
   last_updated: string;
 }
 
+export interface ConfirmationEntry {
+  junction_id: string;
+  status: 'Clear' | 'Occupied' | 'Mismatch';
+  confirmed_at: number;
+  confirmed_by: string;
+  signal: string;
+}
+
+export interface Responder {
+  name: string;
+  type: 'hospital' | 'ndrf' | 'police';
+  lat: number;
+  lng: number;
+  contact: string;
+  distance_km: number;
+}
+
+export interface IncidentAlert {
+  id: string;
+  type: 'signal_mismatch' | 'converging_trains' | 'gps_anomaly';
+  severity: 'high' | 'critical';
+  description: string;
+  affected_trains: string[];
+  lat: number | null;
+  lng: number | null;
+  detected_at: number;
+  estimated_affected_coaches: number;
+  nearest_responders?: Responder[];
+}
+
+export interface AuthorityDispatch {
+  id: string;
+  incident_id: string;
+  authority_name: string;
+  authority_type: 'hospital' | 'ndrf' | 'police' | 'station_master' | 'driver';
+  contact: string;
+  dispatched_at: number;
+  status: 'sent' | 'acknowledged';
+  message: string;
+}
+
 export interface AppState {
   scada: {
     tracks: Record<string, boolean>;
@@ -72,8 +128,12 @@ export interface AppState {
   } | null;
   alerts: Alert[];
   eta: Record<string, ETAPrediction>;
+  station_etas: Record<string, StationETA[]>;
   coach_positions: CoachPosition[];
   risk_scores: Record<string, RiskScore>;
+  confirmation_log: ConfirmationEntry[];
+  incident_alerts: IncidentAlert[];
+  authority_dispatches: AuthorityDispatch[];
 }
 
 export function useWebSockets() {
@@ -82,38 +142,52 @@ export function useWebSockets() {
     trains: null,
     alerts: [],
     eta: {},
+    station_etas: {},
     coach_positions: [],
     risk_scores: {},
+    confirmation_log: [],
+    incident_alerts: [],
+    authority_dispatches: [],
   });
   const [connected, setConnected] = useState(false);
 
-  useEffect(() => {
+  const connect = useCallback(() => {
     const ws = new WebSocket('ws://localhost:8000/ws');
 
     ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
+    ws.onclose = () => {
+      setConnected(false);
+      setTimeout(connect, 3000);
+    };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setState((prevState) => ({
-          ...prevState,
-          scada: data.scada || prevState.scada,
-          trains: data.trains || prevState.trains,
-          alerts: data.alerts || prevState.alerts,
-          eta: data.eta || prevState.eta,
-          coach_positions: data.coach_positions ?? prevState.coach_positions,
-          risk_scores: data.risk_scores ?? prevState.risk_scores,
+        setState((prev) => ({
+          ...prev,
+          scada: data.scada ?? prev.scada,
+          trains: data.trains ?? prev.trains,
+          alerts: data.alerts ?? prev.alerts,
+          eta: data.eta ?? prev.eta,
+          station_etas: data.station_etas ?? prev.station_etas,
+          coach_positions: data.coach_positions ?? prev.coach_positions,
+          risk_scores: data.risk_scores ?? prev.risk_scores,
+          confirmation_log: data.confirmation_log ?? prev.confirmation_log,
+          incident_alerts: data.incident_alerts ?? prev.incident_alerts,
+          authority_dispatches: data.authority_dispatches ?? prev.authority_dispatches,
         }));
       } catch (err) {
-        console.error('Error parsing WS message', err);
+        console.error('WS parse error', err);
       }
     };
 
-    return () => {
-      ws.close();
-    };
+    return ws;
   }, []);
+
+  useEffect(() => {
+    const ws = connect();
+    return () => ws.close();
+  }, [connect]);
 
   return { state, connected };
 }

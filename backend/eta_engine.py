@@ -106,7 +106,43 @@ def predict_for_train(train: dict) -> dict | None:
             "confidence_low_min": low,
             "confidence_high_min": high,
             "confidence_pct": 60,
+            "baseline_mae_min": round(_HIST_STD, 1),
         }
     except Exception as exc:
         logger.error("ETA prediction error: %s", exc)
         return None
+
+
+def predict_station_delay(current_delay: float, dist_remaining_km: float, speed_kmh: float) -> float:
+    """
+    Predict delay (minutes) at a specific upcoming station.
+    Uses the XGBoost model if available; otherwise a simple linear fallback.
+    """
+    if _model is None:
+        return round(max(0.0, current_delay + dist_remaining_km * 0.04), 1)
+
+    try:
+        import xgboost as xgb
+        import numpy as np
+        from datetime import datetime
+
+        now = datetime.now()
+        features = {
+            "current_arrival_delay_min": current_delay,
+            "distance_to_next_km": min(dist_remaining_km, 30.0),
+            "historical_section_avg_delay_filled": _HIST_AVG,
+            "section_historical_median_delay_filled": _HIST_MED,
+            "section_historical_std_delay_filled": _HIST_STD,
+            "section_historical_count": _HIST_CNT,
+            "current_delay_minus_section_avg_filled": current_delay - _HIST_AVG,
+            "train_historical_avg_delay_filled": max(_HIST_AVG, current_delay),
+            "day_of_week": float(now.weekday()),
+            "time_of_day": now.hour + now.minute / 60.0,
+        }
+        row = np.array([[features[f] for f in _FEATURE_NAMES]])
+        dmat = xgb.DMatrix(row, feature_names=_FEATURE_NAMES)
+        pred = float(_model.predict(dmat)[0])
+        return max(0.0, round(pred, 1))
+    except Exception as exc:
+        logger.error("Station delay prediction error: %s", exc)
+        return round(max(0.0, current_delay + dist_remaining_km * 0.04), 1)

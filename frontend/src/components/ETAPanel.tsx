@@ -72,7 +72,10 @@ function TrainETACard({
         </div>
         <ConfidenceBar low={pred.confidence_low_min} high={pred.confidence_high_min} />
         <p className="text-gray-600 mt-1.5">
-          {pred.confidence_pct}% confidence interval · LightGBM quantile regression
+          {pred.confidence_pct}% confidence interval · XGBoost model
+          {pred.baseline_mae_min != null && (
+            <span className="ml-2 text-gray-700">· baseline MAE: {pred.baseline_mae_min}m</span>
+          )}
         </p>
       </div>
     </div>

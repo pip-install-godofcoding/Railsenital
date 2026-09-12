@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import type { AppState } from '../hooks/useWebSockets';
 import TrackMap from './TrackMap';
 import AlertBanner from './AlertBanner';
-import TrackSchematic from './TrackSchematic';
 import AlertLog from './AlertLog';
 import ETAPanel from './ETAPanel';
 import RiskPanel from './RiskPanel';
+import IncidentPanel from './IncidentPanel';
+import ConfirmationLog from './ConfirmationLog';
+import StationTimeline from './StationTimeline';
+import AlertDispatch from './AlertDispatch';
+import WeatherPanel from './WeatherPanel';
 
 interface Props {
   state: AppState;
@@ -72,8 +76,8 @@ const Dashboard = ({ state }: Props) => {
 
   const escalatedAlerts = state.alerts.filter(a => a.status === 'Escalated' || a.escalated_at);
 
-  const [train1, setTrain1] = useState('12952');
-  const [train2, setTrain2] = useState('12841');
+  const [train1, setTrain1] = useState('12859');
+  const [train2, setTrain2] = useState('14707');
 
   const updateTrains = async () => {
     try {
@@ -114,6 +118,12 @@ const Dashboard = ({ state }: Props) => {
               Simulate Collision
             </button>
             <button 
+              onClick={() => injectFault('simulate_gps_anomaly')}
+              className="px-4 py-2 bg-purple-900/50 text-purple-100 border border-purple-800 rounded font-bold hover:bg-purple-800 transition-colors"
+            >
+              GPS Anomaly
+            </button>
+            <button 
               onClick={resolveAll}
               className="px-4 py-2 bg-green-900/50 text-green-100 border border-green-800 rounded font-bold hover:bg-green-800 transition-colors"
             >
@@ -123,13 +133,15 @@ const Dashboard = ({ state }: Props) => {
         </div>
       </div>
 
+      <WeatherPanel />
       <AlertBanner alerts={state.alerts} />
       <TrackMap state={state} />
-      <div className="mt-8">
-        <TrackSchematic state={state} />
-      </div>
+      <StationTimeline state={state} />
+      <IncidentPanel state={state} />
+      <AlertDispatch state={state} />
       <ETAPanel state={state} />
       <RiskPanel state={state} />
+      <ConfirmationLog state={state} />
       <AlertLog alerts={state.alerts} />
 
       {/* Escalation Status Panel */}
