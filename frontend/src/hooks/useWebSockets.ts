@@ -42,6 +42,7 @@ export interface StationETA {
   predicted_delay_min: number;
   eta_timestamp: number;
   scheduled_arrival: string;
+  scheduled_departure?: string;
   expected_arrival: string;
 }
 

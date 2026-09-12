@@ -24,7 +24,7 @@ export default function StationMasterVDU({ state, connected }: Props) {
   }, []);
 
   const inject  = (ep: string) => fetch(`http://localhost:8000/api/${ep}`, { method: 'POST' });
-  const resolve = () => inject('resolve_signal_mismatch').then(() => inject('resolve_converging_trains'));
+  const resolve = () => inject('resolve_all');
 
   const hasIncident = state.incident_alerts.length > 0;
   const activeAlerts = state.alerts.filter(a => a.status !== 'Resolved');

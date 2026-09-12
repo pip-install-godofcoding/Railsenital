@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { AppState, TrainData, StationETA } from '../hooks/useWebSockets';
+import { TrainTimeline } from '../components/StationTimeline';
 
 interface Props { state: AppState; connected: boolean; }
 
@@ -165,27 +166,9 @@ function TrainCard({ train, etas }: { train: TrainData; etas: StationETA[] }) {
         <Stat label="Station" value={train.currentStation || '—'} color="muted" small />
       </div>
 
-      {/* Upcoming ETAs */}
+      {/* Upcoming ETAs Timeline */}
       {etas.length > 0 && (
-        <div>
-          <div className="text-xs font-mono text-rail-textMuted uppercase tracking-wider mb-2">Upcoming Stations</div>
-          <div className="space-y-1.5 max-h-48 overflow-y-auto">
-            {etas.slice(0, 6).map(e => (
-              <div key={e.station_code} className="flex items-center justify-between bg-rail-bg rounded-lg px-3 py-2 border border-rail-border">
-                <div>
-                  <span className="text-xs font-semibold text-rail-text">{e.station_name}</span>
-                  <span className="text-[10px] text-rail-textMuted font-mono ml-2">{e.station_code}</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-mono text-rail-accent">{new Date(e.eta_timestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
-                  <div className={`text-[10px] font-mono ${e.predicted_delay_min > 0 ? 'text-rail-warning' : 'text-rail-success'}`}>
-                    {e.predicted_delay_min > 0 ? `+${Math.round(e.predicted_delay_min)}m late` : 'On time'}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <TrainTimeline trainId={train.trainNumber} train={train} etas={etas} />
       )}
 
       {/* GPS coords */}

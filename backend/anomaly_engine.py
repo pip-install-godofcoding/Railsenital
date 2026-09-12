@@ -20,6 +20,7 @@ class AnomalyEngine:
         self.confirmation_log: deque = deque(maxlen=50)
         self._incident_alerts: list = []
         self._active_keys: set = set()
+        self._gps_suppress_until: float = 0.0
 
     # ------------------------------------------------------------------
     # Confirmation log — derived from SCADA state each tick
@@ -65,6 +66,8 @@ class AnomalyEngine:
     # GPS cluster anomaly — coaches stopped unexpectedly
     # ------------------------------------------------------------------
     def check_gps_cluster_anomaly(self, coach_positions: list) -> list:
+        if time.time() < self._gps_suppress_until:
+            return []
         if len(coach_positions) < 2:
             return []
 
@@ -175,6 +178,15 @@ class AnomalyEngine:
             else:
                 self._active_keys.discard(key)
         self._incident_alerts = kept
+
+    # ------------------------------------------------------------------
+    # Force-clear all incidents (manual resolve)
+    # ------------------------------------------------------------------
+    def force_clear_all(self):
+        self._incident_alerts.clear()
+        self._active_keys.clear()
+        # Suppress GPS anomaly re-detection for 120 s so resolve actually sticks
+        self._gps_suppress_until = time.time() + 120
 
     # ------------------------------------------------------------------
     # Accessors

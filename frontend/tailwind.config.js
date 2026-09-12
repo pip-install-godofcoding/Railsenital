@@ -30,8 +30,9 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        panel:  '0 4px 24px rgba(0,0,0,0.6)',
-        accent: '0 0 0 1px rgba(0,242,254,0.25), 0 4px 24px rgba(0,0,0,0.6)',
+        panel:        '0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)',
+        'panel-hover':'0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,212,170,0.15)',
+        accent:       '0 0 0 1px rgba(0,242,254,0.25), 0 4px 24px rgba(0,0,0,0.6)',
       },
       animation: {
         'ping-slow': 'ping 2s cubic-bezier(0,0,0.2,1) infinite',

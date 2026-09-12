@@ -268,6 +268,14 @@ def resolve_converging_trains():
     return {"status": "Fault resolved"}
 
 
+@app.post("/api/resolve_all")
+def resolve_all():
+    scada_sim.resolve_fault()
+    train_monitor.resolve_fault()
+    anomaly_engine.force_clear_all()
+    return {"status": "All incidents and faults resolved"}
+
+
 # ── Alert management ─────────────────────────────────────────────────────
 
 @app.post("/api/acknowledge_alert/{alert_id}")
@@ -363,6 +371,57 @@ def get_station_etas(train_number: str):
     if not train:
         return {"error": "Train not found"}
     return train.get("stationETAs", [])
+
+
+@app.get("/api/stations/{train_number}")
+def get_stations(train_number: str):
+    from schedule_engine import SCHEDULES, get_realtime_position
+    sched = SCHEDULES.get(train_number)
+    if not sched:
+        return {"error": "Train not found"}
+
+    # Prefer live train position, fall back to schedule-based
+    current_km = 0.0
+    train = train_monitor.live_trains.get(train_number)
+    if train and train.get("distanceFromOriginKm") is not None:
+        current_km = float(train["distanceFromOriginKm"])
+    else:
+        pos = get_realtime_position(train_number)
+        if pos:
+            current_km = pos["dist_km"]
+
+    def fmt(m):
+        if m is None:
+            return None
+        h, mn = divmod(int(m) % 1440, 60)
+        return f"{h:02d}:{mn:02d}"
+
+    stations_out = []
+    for s in sched["stations"]:
+        skm = s["km"]
+        if skm < current_km - 15:
+            status = "past"
+        elif skm <= current_km + 15:
+            status = "current"
+        else:
+            status = "upcoming"
+        stations_out.append({
+            "code": s.get("code", ""),
+            "name": s["name"],
+            "km": skm,
+            "lat": s.get("lat"),
+            "lng": s.get("lng"),
+            "status": status,
+            "scheduled_arr": fmt(s.get("arr")),
+            "scheduled_dep": fmt(s.get("dep")),
+        })
+
+    return {
+        "train_number": train_number,
+        "train_name": sched["name"],
+        "current_km": round(current_km, 1),
+        "stations": stations_out,
+    }
 
 
 # ── Person 2 proxy ───────────────────────────────────────────────────────

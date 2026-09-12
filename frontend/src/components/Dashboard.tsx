@@ -67,8 +67,7 @@ const Dashboard = ({ state }: Props) => {
 
   const resolveAll = async () => {
     try {
-      await fetch('http://localhost:8000/api/resolve_signal_mismatch', { method: 'POST' });
-      await fetch('http://localhost:8000/api/resolve_converging_trains', { method: 'POST' });
+      await fetch('http://localhost:8000/api/resolve_all', { method: 'POST' });
     } catch (e) {
       console.error(e);
     }
@@ -92,125 +91,103 @@ const Dashboard = ({ state }: Props) => {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-widest">MAIN CONTROL ROOM</h1>
-          <p className="text-gray-400">Independent Signal &amp; Position Integrity Verification</p>
-        </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2 items-center bg-[#0f172a] p-2 rounded border border-gray-700">
-            <input value={train1} onChange={e => setTrain1(e.target.value)} placeholder="Train 1 No." className="bg-[#1e293b] text-white p-1 rounded w-24 text-sm" />
-            <input value={train2} onChange={e => setTrain2(e.target.value)} placeholder="Train 2 No." className="bg-[#1e293b] text-white p-1 rounded w-24 text-sm" />
-            <button onClick={updateTrains} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm font-bold">Track</button>
+    <div className="min-h-screen bg-[#020813] text-gray-300 p-4 font-sans">
+      <div className="max-w-[1600px] mx-auto">
+        
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 bg-railPanel/50 p-4 rounded-xl border border-gray-800">
+          <div>
+            <h1 className="text-2xl font-black text-white tracking-wider flex items-center gap-3">
+              <span className="w-3 h-3 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_#3b82f6]"></span>
+              MAIN CONTROL ROOM
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">Independent Signal &amp; Position Integrity Verification</p>
           </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => injectFault('inject_signal_mismatch')}
-              className="px-4 py-2 bg-red-900/50 text-red-100 border border-red-800 rounded font-bold hover:bg-red-800 transition-colors"
-            >
-              Signal Mismatch
-            </button>
-            <button 
-              onClick={() => injectFault('inject_converging_trains')}
-              className="px-4 py-2 bg-orange-900/50 text-orange-100 border border-orange-800 rounded font-bold hover:bg-orange-800 transition-colors"
-            >
-              Simulate Collision
-            </button>
-            <button 
-              onClick={() => injectFault('simulate_gps_anomaly')}
-              className="px-4 py-2 bg-purple-900/50 text-purple-100 border border-purple-800 rounded font-bold hover:bg-purple-800 transition-colors"
-            >
-              GPS Anomaly
-            </button>
-            <button 
-              onClick={resolveAll}
-              className="px-4 py-2 bg-green-900/50 text-green-100 border border-green-800 rounded font-bold hover:bg-green-800 transition-colors"
-            >
-              Resolve
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <WeatherPanel />
-      <AlertBanner alerts={state.alerts} />
-      <TrackMap state={state} />
-      <StationTimeline state={state} />
-      <IncidentPanel state={state} />
-      <AlertDispatch state={state} />
-      <ETAPanel state={state} />
-      <RiskPanel state={state} />
-      <ConfirmationLog state={state} />
-      <AlertLog alerts={state.alerts} />
-
-      {/* Escalation Status Panel */}
-      <div className="mt-6 bg-railPanel p-4 rounded-lg border border-gray-700">
-        <h3 className="text-lg font-bold mb-4 text-gray-300">Escalation Status</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Config Form */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <h4 className="text-sm font-bold text-gray-400 mb-3">ESCALATION SETTINGS</h4>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Timeout (seconds)</label>
-                <input
-                  type="number"
-                  value={escalationConfig.timeout_seconds}
-                  onChange={e => setEscalationConfig(prev => ({ ...prev, timeout_seconds: parseInt(e.target.value) || 15 }))}
-                  className="w-full bg-gray-900 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
-                  min={5}
-                  max={300}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Phone Number</label>
-                <input
-                  type="text"
-                  value={escalationConfig.phone_number}
-                  onChange={e => setEscalationConfig(prev => ({ ...prev, phone_number: e.target.value }))}
-                  placeholder="+91XXXXXXXXXX"
-                  className="w-full bg-gray-900 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
-                />
-              </div>
-              <button
-                onClick={saveEscalationConfig}
-                className="w-full bg-blue-700 hover:bg-blue-600 text-white py-2 rounded font-bold text-sm transition"
-              >
-                {configSaved ? '✓ Saved!' : 'Save Config'}
+          
+          <div className="flex flex-col items-end gap-3 mt-4 md:mt-0">
+            {/* Train Selector */}
+            <div className="flex gap-2 items-center bg-[#0a1628] p-1.5 rounded-lg border border-[#1e2d45]">
+              <span className="text-xs font-bold text-gray-500 px-2 uppercase tracking-widest">Track</span>
+              <input value={train1} onChange={e => setTrain1(e.target.value)} placeholder="Train 1 No." className="bg-[#1e293b] text-white px-2 py-1.5 rounded-md w-24 text-sm font-mono border-none focus:ring-1 focus:ring-blue-500" />
+              <input value={train2} onChange={e => setTrain2(e.target.value)} placeholder="Train 2 No." className="bg-[#1e293b] text-white px-2 py-1.5 rounded-md w-24 text-sm font-mono border-none focus:ring-1 focus:ring-blue-500" />
+              <button onClick={updateTrains} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-md text-sm font-bold transition shadow-[0_0_10px_#2563eb40]">
+                Set
               </button>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button onClick={() => injectFault('inject_signal_mismatch')} className="px-3 py-1.5 bg-red-950/40 text-red-300 border border-red-900/50 rounded hover:bg-red-900/60 transition text-xs font-bold">Signal Mismatch</button>
+              <button onClick={() => injectFault('inject_converging_trains')} className="px-3 py-1.5 bg-orange-950/40 text-orange-300 border border-orange-900/50 rounded hover:bg-orange-900/60 transition text-xs font-bold">Simulate Collision</button>
+              <button onClick={() => injectFault('simulate_gps_anomaly')} className="px-3 py-1.5 bg-purple-950/40 text-purple-300 border border-purple-900/50 rounded hover:bg-purple-900/60 transition text-xs font-bold">GPS Anomaly</button>
+              <button onClick={resolveAll} className="px-3 py-1.5 bg-green-950/40 text-green-300 border border-green-900/50 rounded hover:bg-green-900/60 transition text-xs font-bold ml-2">Resolve</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Row: Weather / Alerts */}
+        <div className="mb-6">
+          <WeatherPanel />
+          <div className="mt-4"><AlertBanner alerts={state.alerts} /></div>
+        </div>
+
+        {/* Main 2-Column Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          
+          {/* LEFT COLUMN: Map (spans 2 cols) */}
+          <div className="xl:col-span-2 space-y-6">
+            <div className="bg-[#0a1628] rounded-xl border border-[#1e2d45] shadow-lg overflow-hidden flex flex-col h-full">
+              <div className="px-4 py-3 border-b border-[#1e2d45] flex justify-between items-center bg-[#060d1a]">
+                <h2 className="text-sm font-bold text-gray-300 tracking-widest uppercase">Live GIS Map</h2>
+                <span className="text-[10px] bg-emerald-900/40 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded font-mono">● RailRadar LIVE</span>
+              </div>
+              <div className="flex-1 p-2">
+                {/* BIGGER MAP */}
+                <TrackMap state={state} height={800} />
+              </div>
+            </div>
+            
+            {/* Operational Panels moved below map */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <IncidentPanel state={state} />
+              <AlertDispatch state={state} />
+              <RiskPanel state={state} />
+              <ConfirmationLog state={state} />
             </div>
           </div>
 
-          {/* Escalated Alerts List */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <h4 className="text-sm font-bold text-gray-400 mb-3">ESCALATED ALERTS</h4>
-            {escalatedAlerts.length === 0 ? (
-              <p className="text-gray-500 italic text-sm">No escalated alerts.</p>
-            ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {escalatedAlerts.map(alert => (
-                  <div key={alert.id} className="bg-purple-900/30 border border-purple-700 rounded p-3 text-sm">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="font-mono text-xs text-purple-300">{alert.id}</span>
-                        <p className="text-gray-300 mt-1">{alert.description}</p>
-                        {alert.escalated_to && (
-                          <p className="text-purple-400 text-xs mt-1">Escalated to: {alert.escalated_to}</p>
-                        )}
-                      </div>
-                      <div className="text-right text-xs text-gray-500">
-                        {alert.escalated_at
-                          ? new Date(alert.escalated_at * 1000).toLocaleTimeString()
-                          : '—'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          {/* RIGHT COLUMN: Passenger View (StationTimeline) */}
+          <div className="space-y-6">
+            <div className="bg-[#060d1a] border border-[#1e2d45] rounded-xl p-4">
+              <h2 className="text-sm font-bold text-gray-300 tracking-widest uppercase mb-4">Passenger View</h2>
+              <StationTimeline state={state} />
+            </div>
+
+            {/* Escalation Config */}
+            <div className="bg-[#0a1628] rounded-xl border border-[#1e2d45] overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#1e2d45] bg-[#060d1a]">
+                <h3 className="text-sm font-bold text-gray-300 tracking-widest uppercase">Escalation Settings</h3>
               </div>
-            )}
+              <div className="p-4 space-y-3">
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="block text-[10px] text-gray-500 uppercase mb-1">Timeout (s)</label>
+                    <input type="number" value={escalationConfig.timeout_seconds} onChange={e => setEscalationConfig(prev => ({ ...prev, timeout_seconds: parseInt(e.target.value) || 15 }))} className="w-full bg-[#1e293b] text-white px-2 py-1.5 rounded border border-[#1e2d45] text-sm font-mono" />
+                  </div>
+                  <div className="flex-[2]">
+                    <label className="block text-[10px] text-gray-500 uppercase mb-1">Phone Number</label>
+                    <input type="text" value={escalationConfig.phone_number} onChange={e => setEscalationConfig(prev => ({ ...prev, phone_number: e.target.value }))} placeholder="+91XXXXXXXXXX" className="w-full bg-[#1e293b] text-white px-2 py-1.5 rounded border border-[#1e2d45] text-sm font-mono" />
+                  </div>
+                </div>
+                <button onClick={saveEscalationConfig} className="w-full bg-blue-900/40 hover:bg-blue-800/60 border border-blue-800/50 text-blue-300 py-1.5 rounded font-bold text-xs transition">
+                  {configSaved ? '✓ Saved!' : 'Save Config'}
+                </button>
+              </div>
+            </div>
+
+            <AlertLog alerts={state.alerts} />
           </div>
+
         </div>
       </div>
     </div>

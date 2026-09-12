@@ -39,38 +39,8 @@ def _route_coords(route: dict) -> list:
     return []
 
 
-# Route waypoints for known trains (used when RailRadar route API is unavailable)
-FALLBACK_ROUTES: dict[str, list] = {
-    "12841": [
-        [88.3639, 22.5726],                                   # Howrah
-        [87.95, 22.50], [87.60, 22.42], [87.32, 22.33],      # → Kharagpur
-        [87.15, 22.18], [87.05, 22.00], [86.98, 21.80],
-        [86.96, 21.65], [86.9355, 21.4942],                   # Balasore
-        [86.88, 21.38], [86.78, 21.25], [86.65, 21.15],
-        [86.52, 21.0585],                                     # Bhadrak
-        [86.40, 20.93], [86.25, 20.78], [86.10, 20.64],
-        [85.98, 20.54], [85.8830, 20.4625],                   # Cuttack
-        [85.85, 20.37], [85.8135, 20.2673],                   # Bhubaneswar
-        [85.60, 20.05], [85.20, 19.70], [84.79, 19.31],      # → Brahmapur
-        [84.20, 18.80], [83.90, 18.30], [83.50, 18.00],
-        [83.30, 17.72],                                       # Visakhapatnam
-        [82.90, 17.20], [82.20, 16.70], [81.50, 16.30],
-        [81.10, 16.10], [80.65, 16.52],                       # Vijayawada
-        [80.28, 13.08],                                       # Chennai Central
-    ],
-    "12952": [
-        [77.2167, 28.6139],  # New Delhi
-        [77.65, 27.49],      # Mathura
-        [78.02, 27.18],      # Agra
-        [78.17, 26.21],      # Gwalior
-        [78.57, 25.45],      # Jhansi
-        [75.83, 25.18],      # Kota
-        [75.04, 23.33],      # Ratlam
-        [73.19, 22.31],      # Vadodara
-        [72.84, 21.20],      # Surat
-        [72.8367, 18.9667],  # Mumbai CST
-    ],
-}
+# Fallback routes disabled to enforce high-res RailRadar GeoJSON paths
+FALLBACK_ROUTES: dict[str, list] = {}
 
 TRAIN_META: dict[str, dict] = {
     "12841": {
@@ -106,7 +76,7 @@ class TrainMonitor:
         self.simulation_active = False
         self.sim_state: dict = {}
         self.last_api_fetch: float = 0.0
-        self.api_fetch_interval: int = 12
+        self.api_fetch_interval: int = 120  # 2 minutes — preserves monthly quota
 
         self._init_fallback_routes()
 
@@ -383,7 +353,7 @@ class TrainMonitor:
                 "expected_arrival": stop.get("expectedArrival") or "",
             })
 
-        return results[:10]
+        return results
 
     # ------------------------------------------------------------------
     # Per-tick update dispatcher
